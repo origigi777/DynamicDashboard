@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דשבורד דינאמי</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <button id="edit-mode-toggle" class="edit-icon">✏️</button>
+
+    <div class="dashboard-container hidden">
+        <select id="widget-type">
+            <option value="bar-chart"> גרף עמודות</option>
+            <option value="line-chart"> גרף קו</option>
+            <option value="pie-chart"> גרף עוגה</option>
+            <option value="table"> טבלת מכירות</option>
+        </select>
+        <button id="add-widget">➕ הוסף ווידג'ט</button>
+    </div>
+
+    <div id="dashboard" class="dashboard"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

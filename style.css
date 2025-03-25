@@ -1,0 +1,92 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    direction: rtl;
+    background-color: #f4f4f4;
+    margin: 20px;
+}
+
+.edit-icon {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.dashboard-container {
+    width: 90%;
+    margin: auto;
+    padding: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+.dashboard {
+    position: relative;
+    width: 95%;
+    height: 800px;
+    margin: 20px auto;
+    border: 2px solid #aaa;
+    overflow: hidden;
+}
+
+.dashboard.edit-mode {
+    background: repeating-linear-gradient(
+        0deg, #ddd, #ddd 1px, transparent 1px, transparent 20px
+    ),
+    repeating-linear-gradient(
+        90deg, #ddd, #ddd 1px, transparent 1px, transparent 20px
+    );
+}
+
+.widget {
+    width: 300px;
+    height: 250px;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 15px;
+    position: absolute;
+    cursor: grab;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.widget.selected {
+    border: 2px solid green;
+}
+
+.widget .remove {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(255, 0, 0, 0);
+    color: white;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.resize-handle {
+    width: 10px;
+    height: 10px;
+    background: green;
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+    display: none;
+}
+
+.widget.selected .resize-handle {
+    display: block;
+}
