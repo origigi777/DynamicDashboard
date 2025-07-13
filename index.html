@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>דשבורד דינאמי</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlc NooFUgD/EqxSgSQUsISbN/oMvS3F/D/dE1gY8VzPz0TfCq/kX8h/iPqNfT/lA/Vw+zX8w/jA/g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-    <button id="edit-mode-toggle" class="edit-icon">✏️</button>
+       <button id="edit-mode-toggle" class="edit-icon">✏️</button>
 
     <div class="dashboard-container hidden">
         <label for="csv-file-input">טען קובץ CSV:</label>
@@ -20,13 +21,32 @@
         <select id="csv-data-field-y" style="display:none;">
             <option value="">בחר שדה Y</option>
         </select>
+         <select id="csv-data-field-z" style="display:none;"> <option value="">בחר שדה Z (אופציונלי)</option>
+        </select>
         <button id="load-csv-data" style="display:none;">בחר נתונים לגרף</button>
 
         <select id="widget-type">
-            <option value="bar-chart"> גרף עמודות</option>
-            <option value="line-chart"> גרף קו</option>
-            <option value="pie-chart"> גרף עוגה</option>
-            <option value="table"> טבלת מכירות</option>
+            <option value="bar-chart">גרף עמודות</option>
+            <option value="bar-chart-h">גרף עמודות אופקי</option>
+            <option value="line-chart">גרף קו</option>
+            <option value="line-chart-scatter">גרף קו עם נקודות</option>
+            <option value="pie-chart">גרף עוגה</option>
+            <option value="scatter-chart">גרף פיזור</option>
+            <option value="scatter-chart-lines">גרף פיזור (קוים בלבד)</option>
+            <option value="scatter-chart-text">גרף פיזור (טקסט)</option>
+            <option value="bubble-chart">גרף בועות (X,Y,Z-גודל)</option>
+            <option value="box-chart">תרשים קופסה</option>
+            <option value="histogram">היסטוגרמה</option>
+            <option value="heatmap">מפת חום</option>
+            <option value="contour">קונטור</option>
+            <option value="surface">משטח תלת מימדי</option>
+            <option value="mesh3d">רשת תלת מימדית</option>
+            <option value="area-chart">גרף שטח</option>
+            <option value="funnel-chart">גרף משפך</option>
+            <option value="candlestick-chart">גרף נרות (לנתוני מניות)</option>
+            <option value="ohlc-chart">גרף OHLC (לנתוני מניות)</option>
+            <option value="gauge-meter">מד (דורש שדה יחיד)</option>
+            <option value="table">טבלת נתונים</option>
         </select>
         <button id="add-widget">➕ הוסף ווידג'ט</button>
     </div>
