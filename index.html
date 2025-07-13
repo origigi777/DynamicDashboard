@@ -5,12 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>דשבורד דינאמי</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
     <button id="edit-mode-toggle" class="edit-icon">✏️</button>
 
     <div class="dashboard-container hidden">
+        <label for="csv-file-input">טען קובץ CSV:</label>
+        <input type="file" id="csv-file-input" accept=".csv">
+
+        <select id="csv-data-field-x" style="display:none;">
+            <option value="">בחר שדה X</option>
+        </select>
+        <select id="csv-data-field-y" style="display:none;">
+            <option value="">בחר שדה Y</option>
+        </select>
+        <button id="load-csv-data" style="display:none;">בחר נתונים לגרף</button>
+
         <select id="widget-type">
             <option value="bar-chart"> גרף עמודות</option>
             <option value="line-chart"> גרף קו</option>
