@@ -23,17 +23,17 @@ body {
     background: white;
     border: 1px solid #ddd;
     display: flex;
-    flex-wrap: wrap; 
+    flex-wrap: wrap; /* כדי לאפשר גלישה לפריטים רבים */
     justify-content: center;
     gap: 10px;
-    align-items: center; 
+    align-items: center; /* ליישור אנכי */
 }
 
 .dashboard-container label,
 .dashboard-container select,
 .dashboard-container button,
 .dashboard-container input[type="file"] {
-    margin: 5px; 
+    margin: 5px; /* רווח קטן בין הפריטים */
 }
 
 .hidden {
@@ -67,12 +67,12 @@ body {
     position: absolute;
     cursor: grab;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box; 
+    box-sizing: border-box; /* חשוב כדי שה-padding וה-border לא יגדילו את המידות */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    overflow: hidden; 
+    overflow: hidden; /* למנוע גלישת תוכן מעבר לווידג'ט */
 }
 
 .widget .remove {
@@ -86,7 +86,7 @@ body {
     border-radius: 3px;
     cursor: pointer;
     font-size: 12px;
-    z-index: 10; 
+    z-index: 10; /* ודא שהכפתור נמצא מעל הגרף/טבלה */
 }
 
 .resize-handle {
@@ -105,7 +105,7 @@ body {
     display: block;
 }
 
-/* סגנון לטבלה בתוך ווידג'ט */
+
 .widget table {
     width: 100%;
     height: 100%;
