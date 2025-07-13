@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דשבורד דינאמי</title>
+    <title>dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlc NooFUgD/EqxSgSQUsISbN/oMvS3F/D/dE1gY8VzPz0TfCq/kX8h/iPqNfT/lA/Vw+zX8w/jA/g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-</head>
+    </head>
 <body>
-       <button id="edit-mode-toggle" class="edit-icon">✏️</button>
+    <button id="edit-mode-toggle" class="edit-icon">✏️</button>
 
     <div class="dashboard-container hidden">
         <label for="csv-file-input">טען קובץ CSV:</label>
@@ -26,27 +26,70 @@
         <button id="load-csv-data" style="display:none;">בחר נתונים לגרף</button>
 
         <select id="widget-type">
-            <option value="bar-chart">גרף עמודות</option>
-            <option value="bar-chart-h">גרף עמודות אופקי</option>
-            <option value="line-chart">גרף קו</option>
-            <option value="line-chart-scatter">גרף קו עם נקודות</option>
-            <option value="pie-chart">גרף עוגה</option>
-            <option value="scatter-chart">גרף פיזור</option>
-            <option value="scatter-chart-lines">גרף פיזור (קוים בלבד)</option>
-            <option value="scatter-chart-text">גרף פיזור (טקסט)</option>
-            <option value="bubble-chart">גרף בועות (X,Y,Z-גודל)</option>
-            <option value="box-chart">תרשים קופסה</option>
-            <option value="histogram">היסטוגרמה</option>
-            <option value="heatmap">מפת חום</option>
-            <option value="contour">קונטור</option>
-            <option value="surface">משטח תלת מימדי</option>
-            <option value="mesh3d">רשת תלת מימדית</option>
-            <option value="area-chart">גרף שטח</option>
-            <option value="funnel-chart">גרף משפך</option>
-            <option value="candlestick-chart">גרף נרות (לנתוני מניות)</option>
-            <option value="ohlc-chart">גרף OHLC (לנתוני מניות)</option>
-            <option value="gauge-meter">מד (דורש שדה יחיד)</option>
-            <option value="table">טבלת נתונים</option>
+            <optgroup label="גרפים דו-מימדיים בסיסיים">
+                <option value="bar-chart">גרף עמודות</option>
+                <option value="bar-chart-h">גרף עמודות אופקי</option>
+                <option value="line-chart">גרף קו</option>
+                <option value="line-chart-scatter">גרף קו עם נקודות</option>
+                <option value="pie-chart">גרף עוגה</option>
+                <option value="scatter-chart">גרף פיזור</option>
+                <option value="scatter-chart-lines">גרף פיזור (קוים בלבד)</option>
+                <option value="scatter-chart-text">גרף פיזור (טקסט)</option>
+                <option value="area-chart">גרף שטח</option>
+                <option value="box-chart">תרשים קופסה</option>
+                <option value="histogram">היסטוגרמה</option>
+                <option value="funnel-chart">גרף משפך</option>
+                <option value="violin-chart">גרף כינור</option>
+                <option value="polar-chart">גרף קוטבי</option>
+                <option value="sunburst-chart">גרף סאנברסט (היררכי)</option>
+                <option value="treemap-chart">גרף Treemap (היררכי)</option>
+                <option value="icicle-chart">גרף Icicle (היררכי)</option>
+            </optgroup>
+
+            <optgroup label="גרפים דו-מימדיים מתקדמים">
+                <option value="bubble-chart">גרף בועות (X,Y,Z-גודל)</option>
+                <option value="density-heatmap">מפת חום צפיפות</option>
+                <option value="heatmap">מפת חום (דורש Z מספרי)</option>
+                <option value="contour">קונטור (דורש Z מספרי)</option>
+                <option value="histogram2d">היסטוגרמה דו-מימדית</option>
+                <option value="histogram2d-contour">קונטור היסטוגרמה דו-מימדית</option>
+                <option value="density-mapbox">מפת חום צפיפות (Mapbox-דורש API)</option>
+                <option value="splom-chart">מטריצת פיזור (SPLOM - לכל השדות המספריים)</option>
+                <option value="parcoords-chart">קואורדינטות מקבילות (לכל השדות המספריים)</option>
+                <option value="parallel-categories-chart">קטגוריות מקבילות</option>
+                <option value="sankey-chart">דיאגרמת סאנקי (דורש Source, Target, Value)</option>
+                <option value="gantt-chart">תרשים גאנט (דורש Start, End, Task)</option>
+            </optgroup>
+
+            <optgroup label="גרפים תלת מימדיים">
+                <option value="scatter3d-chart">גרף פיזור תלת מימדי</option>
+                <option value="line3d-chart">גרף קו תלת מימדי</option>
+                <option value="surface-chart">משטח תלת מימדי</option>
+                <option value="mesh3d-chart">רשת תלת מימדית</option>
+                <option value="cone-chart">גרף קונוס תלת מימדי</option>
+                <option value="streamtube-chart">גרף צינור זרימה תלת מימדי</option>
+                <option value="isosurface-chart">משטח איזו תלת מימדי</option>
+                <option value="volume-chart">גרף נפח תלת מימדי</option>
+            </optgroup>
+
+            <optgroup label="גרפים פיננסיים">
+                <option value="candlestick-chart">גרף נרות (לנתוני מניות)</option>
+                <option value="ohlc-chart">גרף OHLC (לנתוני מניות)</option>
+                <option value="waterfall-chart">גרף מפל</option>
+                <option value="funnel-area-chart">גרף שטח משפך</option>
+            </optgroup>
+
+            <optgroup label="מפות (דורש Mapbox API Key או GeoJSON)">
+                <option value="scatter-mapbox-chart">מפת פיזור (Mapbox)</option>
+                <option value="choropleth-mapbox-chart">מפת חלוקה אזורית (Mapbox)</option>
+                <option value="scatter-geo-chart">מפת פיזור גיאוגרפית</option>
+                <option value="choropleth-geo-chart">מפת חלוקה אזורית גיאוגרפית</option>
+            </optgroup>
+
+            <optgroup label="אחרים">
+                <option value="gauge-meter">מד (דורש שדה יחיד)</option>
+                <option value="table">טבלת נתונים</option>
+            </optgroup>
         </select>
         <button id="add-widget">➕ הוסף ווידג'ט</button>
     </div>
