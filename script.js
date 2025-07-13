@@ -77,7 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedZField = csvDataFieldZSelect.value; // קבל שדה Z
 
         // בדוק ששדות נבחרו בהתאם לסוג הגרף
-        // פונקציה זו יכולה להיות מורכבת יותר, אך נשתמש בבדיקה בסיסית
         if (parsedCsvData.length > 0 && selectedXField) {
             selectedCsvChartData = {
                 labels: parsedCsvData.map(row => row[selectedXField]),
@@ -157,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const chartId = `chart-${id}`;
                     const existingChartDiv = document.getElementById(chartId);
                     if (existingChartDiv) {
-                         Plotly.relayout(existingChartDiv, {autosize: true}); //
+                         Plotly.relayout(existingChartDiv, {autosize: true});
                     }
                 }
             }
@@ -215,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // השהיה קצרה לוודא שה-div של הגרף נוצר וזמין ב-DOM
             setTimeout(() => createChart(`chart-${id}`, type, chartData), 50);
         } else if (type === "table") {
-            setTimeout(() => createTable(`table-${id}`, parsedCsvData, csvHeaders), 50); //
+            setTimeout(() => createTable(`table-${id}`, parsedCsvData, csvHeaders), 50);
         }
     }
 
@@ -242,8 +241,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let data = [];
         let layout = {
             margin: { t: 40, b: 40, l: 40, r: 40 },
-            autosize: true
+            autosize: true,
+            hovermode: 'closest' // שיפור אינטראקטיביות
         };
+
+        const defaultNoDataMessage = '<p style="text-align: center; color: gray;">נתונים חסרים או לא מתאימים לסוג גרף זה.</p>';
 
         switch (type) {
             case "bar-chart":
@@ -292,25 +294,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 layout.xaxis = { title: xAxisTitle };
                 layout.yaxis = { title: yAxisTitle };
                 break;
-            case "bubble-chart": // גרף בועות (דורש X, Y, ו-Z לגודל)
-                if (zValues.some(isNaN) || zValues.length === 0) { // לוודא ששדה Z נבחר כראוי
-                    chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף בועות, אנא בחר שדה Z (לגודל הבועה) המכיל ערכים מספריים.</p>';
-                    return;
-                }
-                data = [{
-                    x: labels,
-                    y: values,
-                    mode: 'markers',
-                    marker: {
-                        size: zValues.map(val => val / 10), // קנה מידה לגודל הבועה
-                        sizemode: 'area',
-                        sizeref: 2 * Math.max(...zValues) / (40**2), // גודל יחסי
-                        sizemin: 4
-                    },
-                    type: 'scatter',
-                    name: 'נתונים'
-                }];
-                layout.title = `גרף בועות: ${yAxisTitle} מול ${xAxisTitle} (גודל: ${zAxisTitle})`;
+            case "area-chart": // גרף שטח
+                data = [{ x: labels, y: values, fill: 'tozeroy', type: 'scatter', mode: 'lines', name: 'שטח' }];
+                layout.title = `גרף שטח עבור ${xAxisTitle} ו-${yAxisTitle}`;
                 layout.xaxis = { title: xAxisTitle };
                 layout.yaxis = { title: yAxisTitle };
                 break;
@@ -326,44 +312,139 @@ document.addEventListener("DOMContentLoaded", () => {
                 layout.yaxis = { title: 'תדירות', automargin: true };
                 layout.bargap = 0.05;
                 break;
+            case "funnel-chart": // גרף משפך
+                 data = [{
+                    y: labels,
+                    x: values,
+                    type: 'funnel',
+                    orientation: 'h' // אופקי נפוץ יותר למשפך
+                }];
+                layout.title = `גרף משפך עבור ${yAxisTitle} לפי ${xAxisTitle}`;
+                layout.xaxis = { title: xAxisTitle };
+                layout.yaxis = { title: yAxisTitle };
+                break;
+            case "violin-chart": // גרף כינור (דומה לבוקסה אבל מציג צפיפות)
+                 if (values.length === 0) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                 }
+                data = [{
+                    y: values,
+                    type: 'violin',
+                    box: { visible: true },
+                    points: 'all',
+                    name: yAxisTitle
+                }];
+                layout.title = `גרף כינור של ${yAxisTitle}`;
+                layout.yaxis = { title: yAxisTitle };
+                break;
+            case "polar-chart": // גרף קוטבי
+                if (labels.length === 0 || values.length === 0) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                }
+                data = [{
+                    r: values,
+                    theta: labels,
+                    mode: 'lines+markers',
+                    type: 'scatterpolar'
+                }];
+                layout.title = `גרף קוטבי: ${yAxisTitle} מול ${xAxisTitle}`;
+                layout.polar = {
+                    radialaxis: {
+                        visible: true,
+                        range: [0, Math.max(...values) * 1.1 || 100]
+                    }
+                };
+                break;
+            case "sunburst-chart": // גרף Sunburst (היררכי)
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף Sunburst דורש נתונים היררכיים (הורה, ילד, ערך). אנא ספק נתונים מתאימים.</p>';
+                return;
+            case "treemap-chart": // גרף Treemap (היררכי)
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף Treemap דורש נתונים היררכיים (הורה, ילד, ערך). אנא ספק נתונים מתאימים.</p>';
+                return;
+            case "icicle-chart": // גרף Icicle (היררכי)
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף Icicle דורש נתונים היררכיים (הורה, ילד, ערך). אנא ספק נתונים מתאימים.</p>';
+                return;
+
+            // גרפים דו-מימדיים מתקדמים
+            case "bubble-chart": // גרף בועות (דורש X, Y, ו-Z לגודל)
+                if (zValues.some(isNaN) || zValues.length === 0) { // לוודא ששדה Z נבחר כראוי
+                    chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף בועות, אנא בחר שדה Z (לגודל הבועה) המכיל ערכים מספריים.</p>';
+                    return;
+                }
+                data = [{
+                    x: labels,
+                    y: values,
+                    mode: 'markers',
+                    marker: {
+                        size: zValues.map(val => val / 10 + 5), // קנה מידה לגודל הבועה, מינימום 5
+                        sizemode: 'area',
+                        sizeref: 2 * Math.max(...zValues) / (40**2) || 1, // גודל יחסי
+                        sizemin: 4
+                    },
+                    type: 'scatter',
+                    name: 'נתונים'
+                }];
+                layout.title = `גרף בועות: ${yAxisTitle} מול ${xAxisTitle} (גודל: ${zAxisTitle})`;
+                layout.xaxis = { title: xAxisTitle };
+                layout.yaxis = { title: yAxisTitle };
+                break;
+            case "density-heatmap": // מפת חום צפיפות
+                if (labels.length === 0 || values.length === 0) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                }
+                data = [{
+                    x: labels,
+                    y: values,
+                    type: 'histogram2dcontour', // או histogram2d
+                    colorscale: 'Viridis'
+                }];
+                layout.title = `מפת חום צפיפות של ${yAxisTitle} מול ${xAxisTitle}`;
+                layout.xaxis = { title: xAxisTitle };
+                layout.yaxis = { title: yAxisTitle };
+                break;
             case "heatmap":
-                // דורש מטריצה או X, Y, Z. נשתמש ב-X ו-Y וננסה ליצור מטריצה.
-                // זהו גרף מורכב יותר לנתוני CSV גולמיים.
-                // נניח ש-X ו-Y הם קטגוריות ו-Z הם ערכים מספריים.
                 if (zValues.some(isNaN) || zValues.length === 0) {
                      chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מפת חום, אנא בחר שדה Z מספרי כערכים עבור צבע המפה.</p>';
                     return;
                 }
-                // עבור heatmap, ניצור מטריצה מ-labels, values, ו-zValues
-                // זה דורש לוגיקה מורכבת יותר, כברירת מחדל ננסה לייצר מטריצה 2x2 מדומיינת או להשתמש בערכים אם יש מספיק
-                const uniqueLabels = [...new Set(labels)];
-                const uniqueValues = [...new Set(values)];
-                const zMatrix = [];
-                // בניית מטריצה בסיסית, זה פשטני ויתכן שידרוש התאמה לנתונים ספציפיים
-                if (uniqueLabels.length >= 2 && uniqueValues.length >= 2) {
-                    for (let i = 0; i < uniqueValues.length; i++) {
-                        zMatrix.push(Array(uniqueLabels.length).fill(0));
+                const uniqueLabelsHeatmap = [...new Set(labels)];
+                const uniqueValuesHeatmap = [...new Set(values)];
+                const zMatrixHeatmap = [];
+
+                if (uniqueLabelsHeatmap.length >= 2 && uniqueValuesHeatmap.length >= 2) {
+                    for (let i = 0; i < uniqueValuesHeatmap.length; i++) {
+                        zMatrixHeatmap.push(Array(uniqueLabelsHeatmap.length).fill(0));
                     }
                     parsedCsvData.forEach(row => {
-                        const xIdx = uniqueLabels.indexOf(row[chartData.xField]);
-                        const yIdx = uniqueValues.indexOf(parseFloat(row[chartData.yField]));
+                        const xIdx = uniqueLabelsHeatmap.indexOf(row[chartData.xField]);
+                        const yVal = parseFloat(row[chartData.yField]);
+                        const yIdx = uniqueValuesHeatmap.indexOf(yVal);
                         const zVal = parseFloat(row[chartData.zField]);
                         if (xIdx !== -1 && yIdx !== -1 && !isNaN(zVal)) {
-                            zMatrix[yIdx][xIdx] = zVal;
+                            zMatrixHeatmap[yIdx][xIdx] = zVal;
                         }
                     });
-                } else if (labels.length >= 4) { // אם אין מספיק קטגוריות, ננסה להשתמש ב-Z values באופן ליניארי
-                    zMatrix.push(zValues.slice(0, Math.floor(zValues.length / 2)));
-                    zMatrix.push(zValues.slice(Math.floor(zValues.length / 2), zValues.length));
+                } else if (labels.length > 0 && values.length > 0 && zValues.length > 0) {
+                    // ניסיון ליצור מטריצה מופשטת אם אין קטגוריות מספיקות
+                    const rows = Math.floor(Math.sqrt(zValues.length));
+                    const cols = Math.ceil(zValues.length / rows);
+                    for (let i = 0; i < rows; i++) {
+                        zMatrixHeatmap.push(zValues.slice(i * cols, (i + 1) * cols));
+                    }
+                    layout.xaxis = { title: 'אינדקס X' };
+                    layout.yaxis = { title: 'אינדקס Y' };
                 } else {
-                    chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מפת חום, נדרשים נתונים מרובים ב-X, Y וב-Z.</p>';
+                    chartDiv.innerHTML = defaultNoDataMessage;
                     return;
                 }
 
                 data = [{
-                    z: zMatrix,
-                    x: uniqueLabels,
-                    y: uniqueValues,
+                    z: zMatrixHeatmap,
+                    x: uniqueLabelsHeatmap.length >= 2 ? uniqueLabelsHeatmap : Array.from({length: zMatrixHeatmap[0] ? zMatrixHeatmap[0].length : 0}, (_, i) => i),
+                    y: uniqueValuesHeatmap.length >= 2 ? uniqueValuesHeatmap : Array.from({length: zMatrixHeatmap.length}, (_, i) => i),
                     type: 'heatmap'
                 }];
                 layout.title = `מפת חום: ${zAxisTitle} לפי ${xAxisTitle} ו-${yAxisTitle}`;
@@ -371,7 +452,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 layout.yaxis = { title: yAxisTitle };
                 break;
             case "contour":
-                // בדומה ל-heatmap, דורש מטריצה
                  if (zValues.some(isNaN) || zValues.length === 0) {
                      chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור קונטור, אנא בחר שדה Z מספרי כערכים לגבהים.</p>';
                     return;
@@ -386,32 +466,190 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     parsedCsvData.forEach(row => {
                         const xIdx = uniqueLabelsContour.indexOf(row[chartData.xField]);
-                        const yIdx = uniqueValuesContour.indexOf(parseFloat(row[chartData.yField]));
+                        const yVal = parseFloat(row[chartData.yField]);
+                        const yIdx = uniqueValuesContour.indexOf(yVal);
                         const zVal = parseFloat(row[chartData.zField]);
                         if (xIdx !== -1 && yIdx !== -1 && !isNaN(zVal)) {
                             zMatrixContour[yIdx][xIdx] = zVal;
                         }
                     });
-                } else if (labels.length >= 4) {
-                    zMatrixContour.push(zValues.slice(0, Math.floor(zValues.length / 2)));
-                    zMatrixContour.push(zValues.slice(Math.floor(zValues.length / 2), zValues.length));
+                } else if (labels.length > 0 && values.length > 0 && zValues.length > 0) {
+                     const rows = Math.floor(Math.sqrt(zValues.length));
+                    const cols = Math.ceil(zValues.length / rows);
+                    for (let i = 0; i < rows; i++) {
+                        zMatrixContour.push(zValues.slice(i * cols, (i + 1) * cols));
+                    }
+                    layout.xaxis = { title: 'אינדקס X' };
+                    layout.yaxis = { title: 'אינדקס Y' };
                 } else {
-                    chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור קונטור, נדרשים נתונים מרובים ב-X, Y וב-Z.</p>';
+                    chartDiv.innerHTML = defaultNoDataMessage;
                     return;
                 }
 
                 data = [{
                     z: zMatrixContour,
-                    x: uniqueLabelsContour,
-                    y: uniqueValuesContour,
+                    x: uniqueLabelsContour.length >= 2 ? uniqueLabelsContour : Array.from({length: zMatrixContour[0] ? zMatrixContour[0].length : 0}, (_, i) => i),
+                    y: uniqueValuesContour.length >= 2 ? uniqueValuesContour : Array.from({length: zMatrixContour.length}, (_, i) => i),
                     type: 'contour'
                 }];
                 layout.title = `קונטור: ${zAxisTitle} לפי ${xAxisTitle} ו-${yAxisTitle}`;
                 layout.xaxis = { title: xAxisTitle };
                 layout.yaxis = { title: yAxisTitle };
                 break;
-            case "surface": // גרף משטח תלת מימדי
-                // דורש X, Y, Z כמטריצה או מערכים, ננסה להשתמש ב-X, Y, Z
+            case "histogram2d":
+                if (labels.length === 0 || values.length === 0) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                }
+                data = [{
+                    x: labels.map(Number),
+                    y: values.map(Number),
+                    type: 'histogram2d',
+                    colorscale: 'Portland'
+                }];
+                layout.title = `היסטוגרמה דו-מימדית של ${yAxisTitle} מול ${xAxisTitle}`;
+                layout.xaxis = { title: xAxisTitle };
+                layout.yaxis = { title: yAxisTitle };
+                break;
+            case "histogram2d-contour":
+                 if (labels.length === 0 || values.length === 0) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                }
+                data = [{
+                    x: labels.map(Number),
+                    y: values.map(Number),
+                    type: 'histogram2dcontour',
+                    colorscale: 'Viridis'
+                }];
+                layout.title = `קונטור היסטוגרמה דו-מימדית של ${yAxisTitle} מול ${xAxisTitle}`;
+                layout.xaxis = { title: xAxisTitle };
+                layout.yaxis = { title: yAxisTitle };
+                break;
+            case "density-mapbox": // מפת חום צפיפות Mapbox
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">מפת חום צפיפות Mapbox דורשת Mapbox API Key ושדות Lat/Lon.</p>';
+                return;
+            case "splom-chart": // מטריצת פיזור (SPLOM)
+                if (parsedCsvData.length === 0 || csvHeaders.length < 2) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                }
+                const numericHeadersSplom = csvHeaders.filter(header => parsedCsvData.every(row => !isNaN(parseFloat(row[header]))));
+                if (numericHeadersSplom.length < 2) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">מטריצת פיזור דורשת לפחות שני שדות מספריים ב-CSV.</p>';
+                    return;
+                }
+                const dimensionsSplom = numericHeadersSplom.map(header => ({
+                    label: header,
+                    values: parsedCsvData.map(row => parseFloat(row[header]))
+                }));
+                data = [{
+                    type: 'splom',
+                    dimensions: dimensionsSplom,
+                    showupperhalf: false, // מציג רק את חצי הגרפים התחתון
+                    marker: {
+                        color: 'blue',
+                        size: 5,
+                        line: {
+                            width: 0.5,
+                            color: 'white'
+                        }
+                    }
+                }];
+                layout.title = `מטריצת פיזור (SPLOM) של נתונים מספריים`;
+                break;
+            case "parcoords-chart": // קואורדינטות מקבילות
+                if (parsedCsvData.length === 0 || csvHeaders.length < 2) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                }
+                const numericHeadersParcoords = csvHeaders.filter(header => parsedCsvData.every(row => !isNaN(parseFloat(row[header]))));
+                if (numericHeadersParcoords.length < 2) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">קואורדינטות מקבילות דורשות לפחות שני שדות מספריים ב-CSV.</p>';
+                    return;
+                }
+                const dimensionsParcoords = numericHeadersParcoords.map(header => ({
+                    range: [Math.min(...parsedCsvData.map(row => parseFloat(row[header] || 0))), Math.max(...parsedCsvData.map(row => parseFloat(row[header] || 0)))],
+                    label: header,
+                    values: parsedCsvData.map(row => parseFloat(row[header] || 0))
+                }));
+                data = [{
+                    type: 'parcoords',
+                    line: { showscale: true, reversescale: true, colorscale: 'Jet' },
+                    dimensions: dimensionsParcoords
+                }];
+                layout.title = `קואורדינטות מקבילות (כל השדות המספריים ב-CSV)`;
+                break;
+            case "parallel-categories-chart": // קטגוריות מקבילות
+                if (parsedCsvData.length === 0 || csvHeaders.length < 2) {
+                     chartDiv.innerHTML = defaultNoDataMessage;
+                    return;
+                }
+                const categoryDimensions = csvHeaders.map(header => ({
+                    label: header,
+                    values: parsedCsvData.map(row => row[header])
+                }));
+                 data = [{
+                    type: 'parcats',
+                    dimensions: categoryDimensions,
+                    line: {
+                        color: parsedCsvData.map(row => parseFloat(row[csvHeaders[0]] || 0)), // השתמש בעמודה הראשונה לצבע
+                        colorscale: 'Viridis',
+                        showscale: true
+                    },
+                    hoveron: 'color',
+                    hoverinfo: 'count'
+                }];
+                layout.title = `קטגוריות מקבילות (לכל השדות ב-CSV)`;
+                break;
+            case "sankey-chart": // דיאגרמת סאנקי (דורש קשרים בין צמתים)
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">דיאגרמת סאנקי דורשת נתונים בפורמט ספציפי (מקור, יעד, ערך). אנא ספק נתונים מתאימים.</p>';
+                return;
+            case "gantt-chart": // תרשים גאנט (דורש Start, End, Task)
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">תרשים גאנט דורש נתונים בפורמט ספציפי (תאריך התחלה, תאריך סיום, משימה). אנא ספק נתונים מתאימים.</p>';
+                return;
+
+            // גרפים תלת מימדיים
+            case "scatter3d-chart": // גרף פיזור תלת מימדי
+                 if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף פיזור תלת מימדי, אנא בחר שלושה שדות מספריים (X, Y, Z).</p>';
+                    return;
+                }
+                data = [{
+                    x: labels.map(Number),
+                    y: values,
+                    z: zValues,
+                    mode: 'markers',
+                    marker: { size: 5 },
+                    type: 'scatter3d'
+                }];
+                layout.title = `פיזור תלת מימדי של ${xAxisTitle}, ${yAxisTitle}, ${zAxisTitle}`;
+                layout.scene = {
+                    xaxis: { title: xAxisTitle },
+                    yaxis: { title: yAxisTitle },
+                    zaxis: { title: zAxisTitle }
+                };
+                break;
+            case "line3d-chart": // גרף קו תלת מימדי
+                 if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף קו תלת מימדי, אנא בחר שלושה שדות מספריים (X, Y, Z).</p>';
+                    return;
+                }
+                data = [{
+                    x: labels.map(Number),
+                    y: values,
+                    z: zValues,
+                    mode: 'lines',
+                    type: 'scatter3d'
+                }];
+                layout.title = `קו תלת מימדי של ${xAxisTitle}, ${yAxisTitle}, ${zAxisTitle}`;
+                layout.scene = {
+                    xaxis: { title: xAxisTitle },
+                    yaxis: { title: yAxisTitle },
+                    zaxis: { title: zAxisTitle }
+                };
+                break;
+            case "surface-chart": // גרף משטח תלת מימדי
                 if (zValues.some(isNaN) || zValues.length === 0) {
                      chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף משטח, אנא בחר שדה Z מספרי.</p>';
                     return;
@@ -426,7 +664,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                      parsedCsvData.forEach(row => {
                         const xIdx = uniqueXSurface.indexOf(row[chartData.xField]);
-                        const yIdx = uniqueYSurface.indexOf(parseFloat(row[chartData.yField]));
+                        const yVal = parseFloat(row[chartData.yField]);
+                        const yIdx = uniqueYSurface.indexOf(yVal);
                         const zVal = parseFloat(row[chartData.zField]);
                         if (xIdx !== -1 && yIdx !== -1 && !isNaN(zVal)) {
                             zSurfaceMatrix[yIdx][xIdx] = zVal;
@@ -435,7 +674,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else { // אם אין מספיק נתונים ליצור מטריצה, נשתמש בנתונים כרשימה וננסה
                      zSurfaceMatrix.push(zValues); // Plotly יכול לנסות לנחש מטריצה מזה
                 }
-
 
                 data = [{
                     z: zSurfaceMatrix,
@@ -448,8 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     zaxis: { title: zAxisTitle }
                 };
                 break;
-            case "mesh3d": // גרף רשת תלת מימדית
-                // דורש X, Y, Z (נקודות).
+            case "mesh3d-chart": // גרף רשת תלת מימדית
                 if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
                      chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף רשת תלת מימדי, אנא בחר שלושה שדות מספריים (X, Y, Z).</p>';
                     return;
@@ -467,29 +704,67 @@ document.addEventListener("DOMContentLoaded", () => {
                     zaxis: { title: zAxisTitle }
                 };
                 break;
-            case "area-chart": // גרף שטח
-                data = [{ x: labels, y: values, fill: 'tozeroy', type: 'scatter', mode: 'lines', name: 'שטח' }];
-                layout.title = `גרף שטח עבור ${xAxisTitle} ו-${yAxisTitle}`;
-                layout.xaxis = { title: xAxisTitle };
-                layout.yaxis = { title: yAxisTitle };
-                break;
-            case "funnel-chart": // גרף משפך
-                // דורש labels ו-values.
-                 data = [{
-                    y: labels,
-                    x: values,
-                    type: 'funnel',
-                    orientation: 'h' // אופקי נפוץ יותר למשפך
+            case "cone-chart":
+                 if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף קונוס, אנא בחר שלושה שדות מספריים (X, Y, Z) וכן שדות U, V, W.</p>';
+                    return;
+                }
+                // עבור Cone Chart, נצטרך גם U, V, W (רכיבי וקטור), שנניח שאינם זמינים בבחירת X, Y, Z הרגילה.
+                // נציג רק את הנקודות כברירת מחדל או הודעה.
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף קונוס דורש בנוסף ל-X,Y,Z גם רכיבי וקטור (U,V,W) ב-CSV.</p>';
+                return;
+            case "streamtube-chart":
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף צינור זרימה דורש נתוני זרימה מורכבים (X,Y,Z,U,V,W) ב-CSV.</p>';
+                return;
+            case "isosurface-chart":
+                if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור משטח איזו, אנא בחר שלושה שדות מספריים (X, Y, Z).</p>';
+                    return;
+                }
+                data = [{
+                    x: labels.map(Number),
+                    y: values,
+                    z: zValues,
+                    value: zValues, // נניח ש-Z הוא גם ערך האיזו
+                    type: 'isosurface',
+                    opacity: 0.5,
+                    isomin: Math.min(...zValues),
+                    isomax: Math.max(...zValues)
                 }];
-                layout.title = `גרף משפך עבור ${yAxisTitle} לפי ${xAxisTitle}`;
-                layout.xaxis = { title: xAxisTitle };
-                layout.yaxis = { title: yAxisTitle };
+                layout.title = `משטח איזו של ${zAxisTitle}`;
+                layout.scene = {
+                    xaxis: { title: xAxisTitle },
+                    yaxis: { title: yAxisTitle },
+                    zaxis: { title: zAxisTitle }
+                };
                 break;
+            case "volume-chart":
+                if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף נפח, אנא בחר שלושה שדות מספריים (X, Y, Z).</p>';
+                    return;
+                }
+                 data = [{
+                    x: labels.map(Number),
+                    y: values,
+                    z: zValues,
+                    value: zValues, // נניח ש-Z הוא גם ערך הנפח
+                    type: 'volume',
+                    opacity: 0.5,
+                    isomin: Math.min(...zValues),
+                    isomax: Math.max(...zValues)
+                }];
+                layout.title = `גרף נפח של ${zAxisTitle}`;
+                layout.scene = {
+                    xaxis: { title: xAxisTitle },
+                    yaxis: { title: yAxisTitle },
+                    zaxis: { title: zAxisTitle }
+                };
+                break;
+
+            // גרפים פיננסיים
             case "candlestick-chart": // גרף נרות (מניות)
                 // דורש O, H, L, C ו-Date. נניח ש-X הוא תאריך, Y הוא Open.
-                // נצטרך להרחיב את בחירת השדות או לדרוש קובץ CSV עם פורמט ספציפי
-                // למטרת הדגמה, נניח שהנתונים הראשונים ב-CSV הם OHLC
-                if (parsedCsvData.length < 5 || !csvHeaders.includes("Open") || !csvHeaders.includes("High") || !csvHeaders.includes("Low") || !csvHeaders.includes("Close") || !csvHeaders.includes("Date")) {
+                if (parsedCsvData.length < 1 || !csvHeaders.includes("Date") || !csvHeaders.includes("Open") || !csvHeaders.includes("High") || !csvHeaders.includes("Low") || !csvHeaders.includes("Close")) {
                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף נרות, אנא טען קובץ CSV עם עמודות "Date", "Open", "High", "Low", "Close".</p>';
                     return;
                 }
@@ -511,8 +786,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 layout.yaxis = { title: 'מחיר' };
                 break;
             case "ohlc-chart": // גרף OHLC (מניות)
-                // דומה לגרף נרות, דורש O, H, L, C ו-Date.
-                if (parsedCsvData.length < 5 || !csvHeaders.includes("Open") || !csvHeaders.includes("High") || !csvHeaders.includes("Low") || !csvHeaders.includes("Close") || !csvHeaders.includes("Date")) {
+                if (parsedCsvData.length < 1 || !csvHeaders.includes("Date") || !csvHeaders.includes("Open") || !csvHeaders.includes("High") || !csvHeaders.includes("Low") || !csvHeaders.includes("Close")) {
                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף OHLC, אנא טען קובץ CSV עם עמודות "Date", "Open", "High", "Low", "Close".</p>';
                     return;
                 }
@@ -533,17 +807,79 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
                 layout.yaxis = { title: 'מחיר' };
                 break;
+            case "waterfall-chart": // גרף מפל
+                // דורש נתונים עם סכומים מצטברים
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף מפל דורש נתונים עם סכומים מצטברים (לדוגמה, "שינוי חיובי", "שינוי שלילי", "סה"כ").</p>';
+                return;
+            case "funnel-area-chart": // גרף שטח משפך
+                // דומה למשפך רגיל אבל עם מילוי שטח
+                 data = [{
+                    y: labels,
+                    x: values,
+                    type: 'funnelarea'
+                }];
+                layout.title = `גרף שטח משפך עבור ${yAxisTitle} לפי ${xAxisTitle}`;
+                layout.xaxis = { title: xAxisTitle };
+                layout.yaxis = { title: yAxisTitle };
+                break;
+
+            // מפות (דורש Mapbox API Key או GeoJSON)
+            case "scatter-mapbox-chart": // מפת פיזור Mapbox
+                if (!csvHeaders.includes("lat") || !csvHeaders.includes("lon") || values.length === 0) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מפת Mapbox, אנא בחר קובץ CSV עם עמודות "lat", "lon" (וקיים שדה Y). ייתכן ויהיה צורך במפתח Mapbox API.</p>';
+                    return;
+                }
+                data = [{
+                    type: 'scattermapbox',
+                    lat: parsedCsvData.map(row => parseFloat(row["lat"])),
+                    lon: parsedCsvData.map(row => parseFloat(row["lon"])),
+                    mode: 'markers',
+                    marker: { size: 10, color: 'red' },
+                    text: parsedCsvData.map(row => `${row[chartData.xField]}: ${row[chartData.yField]}`),
+                }];
+                layout.mapbox = { style: 'open-street-map', center: { lat: 31.771959, lon: 35.217018 }, zoom: 7 }; // מרכז ברירת מחדל לישראל
+                layout.title = `מפת פיזור (Mapbox) של ${xAxisTitle} ו-${yAxisTitle}`;
+                break;
+            case "choropleth-mapbox-chart": // מפת חלוקה אזורית Mapbox
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">מפת חלוקה אזורית Mapbox דורשת Mapbox API Key ונתוני GeoJSON או מזהי מחוזות/מדינות.</p>';
+                return;
+            case "scatter-geo-chart": // מפת פיזור גיאוגרפית
+                if (!csvHeaders.includes("lat") || !csvHeaders.includes("lon") || values.length === 0) {
+                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מפת פיזור גיאוגרפית, אנא בחר קובץ CSV עם עמודות "lat", "lon" (וקיים שדה Y).</p>';
+                    return;
+                }
+                data = [{
+                    type: 'scattergeo',
+                    lat: parsedCsvData.map(row => parseFloat(row["lat"])),
+                    lon: parsedCsvData.map(row => parseFloat(row["lon"])),
+                    mode: 'markers',
+                    marker: { size: 10, color: values, colorscale: 'Viridis' },
+                    text: parsedCsvData.map(row => `${row[chartData.xField]}: ${row[chartData.yField]}`),
+                }];
+                layout.geo = {
+                    scope: 'world',
+                    showland: true,
+                    landcolor: 'rgb(243, 243, 243)',
+                    countrycolor: 'rgb(204, 204, 204)'
+                };
+                layout.title = `מפת פיזור גיאוגרפית של ${xAxisTitle} ו-${yAxisTitle}`;
+                break;
+            case "choropleth-geo-chart": // מפת חלוקה אזורית גיאוגרפית
+                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">מפת חלוקה אזורית גיאוגרפית דורשת קודי מדינות/מחוזות וערכים.</p>';
+                return;
+
+            // אחרים
             case "gauge-meter": // מד - דורש שדה מספרי יחיד
                 if (values.length === 0 || isNaN(values[0])) {
                      chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מד, אנא בחר שדה Y מספרי.</p>';
                     return;
                 }
-                // נציג את הערך הראשון כברירת מחדל
                 data = [{
                     type: 'indicator',
-                    mode: 'gauge+number',
+                    mode: 'gauge+number+delta', // הוסף delta
                     value: values[0], // קח את הערך הראשון
                     title: { text: `מד: ${yAxisTitle}` },
+                    delta: { reference: values.length > 1 ? values[1] : 0, relative: true }, // השוואה לערך השני אם קיים
                     gauge: {
                         axis: { range: [null, Math.max(...values) * 1.2 || 100] }, // קנה מידה אוטומטי
                         bar: { color: "darkblue" },
@@ -563,173 +899,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 }];
                 layout.margin = { t: 50, b: 20, l: 20, r: 20 };
                 break;
-            // הוסף כאן גרפים נוספים
-            case "scatter3d": // גרף פיזור תלת מימדי
-                 if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף פיזור תלת מימדי, אנא בחר שלושה שדות מספריים (X, Y, Z).</p>';
-                    return;
-                }
-                data = [{
-                    x: labels.map(Number),
-                    y: values,
-                    z: zValues,
-                    mode: 'markers',
-                    marker: { size: 5 },
-                    type: 'scatter3d'
-                }];
-                layout.title = `פיזור תלת מימדי של ${xAxisTitle}, ${yAxisTitle}, ${zAxisTitle}`;
-                layout.scene = {
-                    xaxis: { title: xAxisTitle },
-                    yaxis: { title: yAxisTitle },
-                    zaxis: { title: zAxisTitle }
-                };
+            case "table": // טבלת נתונים
+                // כבר מטופל מחוץ ל-createChart
                 break;
-            case "line3d": // גרף קו תלת מימדי
-                 if (labels.length === 0 || values.length === 0 || zValues.length === 0 || zValues.some(isNaN)) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף קו תלת מימדי, אנא בחר שלושה שדות מספריים (X, Y, Z).</p>';
-                    return;
-                }
-                data = [{
-                    x: labels.map(Number),
-                    y: values,
-                    z: zValues,
-                    mode: 'lines',
-                    type: 'scatter3d'
-                }];
-                layout.title = `קו תלת מימדי של ${xAxisTitle}, ${yAxisTitle}, ${zAxisTitle}`;
-                layout.scene = {
-                    xaxis: { title: xAxisTitle },
-                    yaxis: { title: yAxisTitle },
-                    zaxis: { title: zAxisTitle }
-                };
-                break;
-            case "scattermapbox": // מפת פיזור Mapbox (דורש אסימון API של Mapbox)
-                // זהו גרף מורכב יותר, דורש קואורדינטות Lat/Lon ושדות אחרים.
-                // עבור הדגמה, נציג הודעה אם אין אסימון API.
-                if (!Plotly.d3.select("body").property("mapboxgl-access-token")) { // בדיקה בסיסית אם האסימון קיים
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מפת Mapbox, נדרש אסימון Mapbox API (יש להוסיף ל-HTML).</p>';
-                    return;
-                }
-                // נניח שיש שדות "lat", "lon" ב-CSV
-                if (!csvHeaders.includes("lat") || !csvHeaders.includes("lon") || values.length === 0) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מפת Mapbox, אנא בחר קובץ CSV עם עמודות "lat", "lon" (וקיים שדה Y).</p>';
-                    return;
-                }
-                data = [{
-                    type: 'scattermapbox',
-                    lat: parsedCsvData.map(row => parseFloat(row["lat"])),
-                    lon: parsedCsvData.map(row => parseFloat(row["lon"])),
-                    mode: 'markers',
-                    marker: { size: 10 },
-                    text: parsedCsvData.map(row => row[chartData.xField] + ': ' + row[chartData.yField]),
-                }];
-                layout.mapbox = { style: 'open-street-map', center: { lat: 0, lon: 0 }, zoom: 1 }; // מרכז ברירת מחדל
-                layout.title = `מפת פיזור של ${xAxisTitle} ו-${yAxisTitle}`;
-                break;
-             case "violin": // גרף כינור (דומה לבוקסה אבל מציג צפיפות)
-                 if (values.length === 0) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף כינור, אנא בחר שדה Y מספרי.</p>';
-                    return;
-                 }
-                data = [{
-                    y: values,
-                    type: 'violin',
-                    box: { visible: true },
-                    points: 'all',
-                    name: yAxisTitle
-                }];
-                layout.title = `גרף כינור של ${yAxisTitle}`;
-                layout.yaxis = { title: yAxisTitle };
-                break;
-            case "density-heatmap": // מפת חום צפיפות
-                if (labels.length === 0 || values.length === 0) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור מפת חום צפיפות, אנא בחר שדות X ו-Y.</p>';
-                    return;
-                }
-                data = [{
-                    x: labels,
-                    y: values,
-                    type: 'histogram2dcontour', // או histogram2d
-                    colorscale: 'Viridis'
-                }];
-                layout.title = `מפת חום צפיפות של ${yAxisTitle} מול ${xAxisTitle}`;
-                layout.xaxis = { title: xAxisTitle };
-                layout.yaxis = { title: yAxisTitle };
-                break;
-            case "polar": // גרף קוטבי
-                // דורש r (רדיוס) ו-theta (זווית). נשתמש ב-Y כ-r וב-X כ-theta.
-                 if (labels.length === 0 || values.length === 0) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף קוטבי, אנא בחר שדות X (זווית) ו-Y (רדיוס).</p>';
-                    return;
-                }
-                data = [{
-                    r: values,
-                    theta: labels,
-                    mode: 'lines+markers',
-                    type: 'scatterpolar'
-                }];
-                layout.title = `גרף קוטבי: ${yAxisTitle} מול ${xAxisTitle}`;
-                layout.polar = {
-                    radialaxis: {
-                        visible: true,
-                        range: [0, Math.max(...values) * 1.1]
-                    }
-                };
-                break;
-            case "scattergl": // גרף פיזור מבוסס WebGL (לביצועים טובים עם הרבה נקודות)
-                 if (labels.length === 0 || values.length === 0) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור גרף פיזור WebGL, אנא בחר שדות X ו-Y.</p>';
-                    return;
-                }
-                data = [{
-                    x: labels,
-                    y: values,
-                    mode: 'markers',
-                    type: 'scattergl'
-                }];
-                layout.title = `גרף פיזור WebGL: ${yAxisTitle} מול ${xAxisTitle}`;
-                layout.xaxis = { title: xAxisTitle };
-                layout.yaxis = { title: yAxisTitle };
-                break;
-            case "parcoords": // קואורדינטות מקבילות (דורש מספר שדות)
-                // זהו גרף מורכב הדורש מספר עמודות נתונים.
-                // נציג רק את 2 השדות הנבחרים, ונדרוש את כל הנתונים ב-CSV.
-                if (parsedCsvData.length === 0 || csvHeaders.length < 2) {
-                     chartDiv.innerHTML = '<p style="text-align: center; color: gray;">עבור קואורדינטות מקבילות, אנא טען קובץ CSV עם מספר עמודות.</p>';
-                    return;
-                }
-                const dimensions = csvHeaders.map(header => ({
-                    range: [Math.min(...parsedCsvData.map(row => parseFloat(row[header] || 0))), Math.max(...parsedCsvData.map(row => parseFloat(row[header] || 0)))],
-                    label: header,
-                    values: parsedCsvData.map(row => parseFloat(row[header] || 0))
-                }));
-                data = [{
-                    type: 'parcoords',
-                    line: { showscale: true, reversescale: true, colorscale: 'Jet' },
-                    dimensions: dimensions
-                }];
-                layout.title = `קואורדינטות מקבילות (כל השדות ב-CSV)`;
-                break;
-            case "sankey": // דיאגרמת סאנקי (דורש קשרים בין צמתים)
-                // זהו גרף מורכב הדורש מבנה נתונים ספציפי של "מקור", "יעד", ו"ערך".
-                // נציג הודעה מתאימה.
-                 chartDiv.innerHTML = '<p style="text-align: center; color: gray;">דיאגרמת סאנקי דורשת נתונים בפורמט ספציפי (מקור, יעד, ערך). אנא ספק נתונים מתאימים.</p>';
-                return;
-            case "sunburst": // גרף Sunburst (היררכי)
-                // דורש מבנה היררכי. נציג הודעה.
-                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף Sunburst דורש נתונים היררכיים (הורה, ילד, ערך). אנא ספק נתונים מתאימים.</p>';
-                return;
-            case "treemap": // גרף Treemap (היררכי)
-                // דורש מבנה היררכי. נציג הודעה.
-                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף Treemap דורש נתונים היררכיים (הורה, ילד, ערך). אנא ספק נתונים מתאימים.</p>';
-                return;
-             case "icicle": // גרף Icicle (היררכי)
-                // דורש מבנה היררכי. נציג הודעה.
-                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">גרף Icicle דורש נתונים היררכיים (הורה, ילד, ערך). אנא ספק נתונים מתאימים.</p>';
-                return;
+
             default:
                 console.warn(`Unsupported chart type: ${type}`);
-                chartDiv.innerHTML = '<p style="text-align: center; color: gray;">סוג גרף לא נתמך או נתונים חסרים.</p>';
+                chartDiv.innerHTML = defaultNoDataMessage;
                 return;
         }
 
